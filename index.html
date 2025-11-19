@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Finance Tracker</title>
+  <style>
+    :root{
+      --bg:#0f1724;
+      --card:#0b1220;
+      --accent:#06b6d4;
+      --accent-2:#06d6a0;
+      --text:#e6eef8;
+      --muted:#9fb0c8;
+      --danger:#ff6b6b;
+      --success:#4ade80;
+      --glass: rgba(255,255,255,0.03);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(180deg,#071024 0%, #051023 100%);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+
+    .container{
+      width:100%;
+      max-width:980px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:14px;
+      padding:20px;
+      box-shadow: 0 6px 30px rgba(2,6,23,0.6);
+      display:grid;
+      grid-template-columns: 320px 1fr;
+      gap:18px;
+    }
+
+    header{
+      grid-column:1/-1;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:6px;
+    }
+    header h1{
+      margin:0;
+      font-size:1.25rem;
+      letter-spacing:0.2px;
+    }
+    header small{color:var(--muted); font-size:0.9rem}
+
+    /* Left column: form + summary */
+    .panel{
+      background:var(--card);
+      border-radius:10px;
+      padding:14px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.01);
+    }
+
+    .summary{
+      display:flex;
+      gap:10px;
+      margin-bottom:12px;
+      flex-wrap:wrap;
+    }
+    .stat{
+      flex:1 1 100%;
+      display:flex;
+      justify-content:space-between;
+      padding:10px;
+      border-radius:8px;
+      background:var(--glass);
+      align-items:center;
+    }
+    @media(min-width:480px){
+      .stat{flex:1 1 auto}
+    }
+    .stat .label{color:var(--muted); font-size:0.85rem}
+    .stat .value{font-weight:700; font-size:1.05rem}
+
+    form.add-form{
+      display:grid;
+      gap:8px;
+      margin-top:8px;
+    }
+    .row{display:flex; gap:8px}
+    input[type="text"], input[type="number"], select{
+      width:100%;
+      padding:10px;
+      border-radius:8px;
+      border:1px solid rgba(255,255,255,0.04);
+      background:transparent;
+      color:var(--text);
+      outline:none;
+      font-size:0.95rem;
+    }
+    .actions{
+      display:flex;
+      gap:8px;
+      margin-top:6px;
+    }
+    button{
+      padding:10px 12px;
+      border-radius:8px;
+      border:0;
+      cursor:pointer;
+      font-weight:600;
+      color:#042027;
+    }
+    .btn-primary{background:var(--accent); color:#022; box-shadow:0 6px 18px rgba(6,182,212,0.08)}
+    .btn-clear{background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.03)}
+
+    /* Right column: transaction list */
+    .transactions{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .card{
+      background:var(--card);
+      padding:12px;
+      border-radius:10px;
+      min-height:80px;
+    }
+    .balance{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .balance .amount{font-size:1.5rem; font-weight:700}
+    .list{
+      margin-top:12px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      max-height:420px;
+      overflow:auto;
+      padding-right:6px;
+    }
+    .txn{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding:9px 10px;
+      border-radius:8px;
+      align-items:center;
+      background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+      border:1px solid rgba(255,255,255,0.02);
+    }
+    .txn .meta{display:flex; gap:10px; align-items:center}
+    .dot{width:10px; height:10px; border-radius:50%}
+    .income .dot{background:var(--success)}
+    .expense .dot{background:var(--danger)}
+    .txn .desc{min-width:0}
+    .txn .desc .title{font-weight:600}
+    .txn .desc .time{color:var(--muted); font-size:0.85rem}
+    .txn .amount{font-weight:700}
+    .txn .amount.income{color:var(--success)}
+    .txn .amount.expense{color:var(--danger)}
+    .txn button{background:transparent; border:0; color:var(--muted); cursor:pointer}
+
+    footer.info{grid-column:1/-1; color:var(--muted); font-size:0.85rem; text-align:center; margin-top:6px}
+
+    /* responsive */
+    @media(max-width:880px){
+      .container{grid-template-columns:1fr; padding:16px}
+    }
+  </style>
+</head>
+<body>
+  <div class="container" role="application" aria-label="Finance tracker app">
+    <header>
+      <div>
+        <h1>Finance Tracker</h1>
+        <small>Track income, expenses and balance</small>
+      </div>
+      <div style="text-align:right">
+        <small id="last-sync" style="color:var(--muted)">Local</small>
+      </div>
+    </header>
+
+    <aside class="panel" aria-labelledby="controls">
+      <div class="summary" aria-hidden="false">
+        <div class="stat">
+          <div>
+            <div class="label">Balance</div>
+            <div id="balance" class="value">₹0.00</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="label">Net</div>
+            <div id="net" class="value">0</div>
+          </div>
+        </div>
+        <div class="stat">
+          <div>
+            <div class="label">Income</div>
+            <div id="income" class="value">+₹0.00</div>
+          </div>
+          <div>
+            <div class="label">Expenses</div>
+            <div id="expenses" class="value">-₹0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <form id="form" class="add-form" aria-labelledby="controls">
+        <label style="color:var(--muted); font-size:0.9rem">Add transaction</label>
+        <input id="text" type="text" placeholder="Description e.g. Salary, Rent" aria-label="Description" />
+        <div class="row">
+          <input id="amount" type="number" step="0.01" placeholder="Amount (use negative for expense)" aria-label="Amount" />
+          <select id="category" aria-label="Category">
+            <option value="general">General</option>
+            <option value="salary">Salary</option>
+            <option value="food">Food</option>
+            <option value="shopping">Shopping</option>
+            <option value="bills">Bills</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button type="submit" class="btn-primary">Add</button>
+          <button type="button" id="clear-all" class="btn-clear">Clear all</button>
+        </div>
+      </form>
+    </aside>
+
+    <main class="transactions" aria-live="polite">
+      <div class="card balance">
+        <div>
+          <div style="color:var(--muted)">Current Balance</div>
+          <div id="balance-large" class="amount">₹0.00</div>
+        </div>
+        <div style="text-align:right">
+          <div style="color:var(--muted)">Transactions</div>
+          <div id="count" style="font-weight:700">0</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <strong>History</strong>
+          <small style="color:var(--muted)">recent first</small>
+        </div>
+        <div id="list" class="list" role="list"></div>
+        <div style="margin-top:10px; color:var(--muted); font-size:0.9rem">
+          Tips: Use negative amount for expenses or choose the category. Data stored in browser localStorage.
+        </div>
+      </div>
+
+      <footer class="info">Built with HTML • CSS • JavaScript — Responsive</footer>
+    </main>
+  </div>
+
+  <script>
+    // Simple Finance Tracker - single-file app
+    const STORAGE_KEY = 'financetracker_txns_v1';
+    const form = document.getElementById('form');
+    const textEl = document.getElementById('text');
+    const amountEl = document.getElementById('amount');
+    const categoryEl = document.getElementById('category');
+    const listEl = document.getElementById('list');
+
+    // helper functions
+    const toNumber = (val) => Number(val.replace(/[^0-9.-]+/g,""));
+    const toCurrency = (val) => {
+      return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(val);
+    }
+
+    // load & render
+    const txns = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    const renderList = (items = txns) => {
+      listEl.innerHTML = "";
+      items.forEach((txn, index) => {
+        const date = new Date(txn.date);
+        const now = new Date();
+        const isToday = date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+        const isThisYear = date.getFullYear() === now.getFullYear();
+        const timeFormat = isToday ? 'shortTime' : (isThisYear ? 'medium' : 'full');
+        const dateFormat = { year: 'numeric', month: 'short', day: 'numeric' };
+
+        const item = document.createElement('div');
+        item.className = `txn ${txn.type}`;
+        item.setAttribute('data-type', txn.type);
+        item.setAttribute('data-category', txn.category);
+        item.setAttribute('data-id', index);
+        item.style.setProperty('--color', `var(--${txn.type})`);
+        item.innerHTML = `
+          <div class="meta">
+            <div class="dot"></div>
+            <div class="desc">
+              <div class="title">${txn.text}</div>
+              <div class="time">${date.toLocaleString('en-US', { hour: 'numeric', minute
+
+
